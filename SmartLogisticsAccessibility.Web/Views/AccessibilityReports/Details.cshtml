@@ -1,0 +1,122 @@
+@model SmartLogisticsAccessibility.Web.Models.AccessibilityReport
+@{
+    ViewData["Title"] = "Accessibility Report — " + (Model.Location?.Name ?? "");
+}
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-clipboard2-check me-2 text-success"></i>@Model.Title</h1>
+        <div class="page-subtitle">@(Model.Location?.Name ?? "Unknown Location")</div>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+
+@if (Model.IsSampleData)
+{
+    <div class="alert alert-warning mb-3"><i class="bi bi-info-circle me-2"></i><strong>Sample Data</strong> — This report was auto-generated for demonstration purposes.</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Score Card -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-4">
+                    <div class="text-center" style="min-width:100px">
+                        <div style="font-size:2.5rem;font-weight:800;color:@(Model.AccessibilityScore >= 75 ? "#16a34a" : Model.AccessibilityScore >= 40 ? "#d97706" : "#dc2626")">@Model.AccessibilityScore%</div>
+                        <div class="text-muted-sm">Accessibility Score</div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="score-bar mb-2" style="height:14px">
+                            <div class="score-bar-fill bg-@(Model.AccessibilityScore >= 75 ? "success" : Model.AccessibilityScore >= 40 ? "warning" : "danger")" style="width:@Model.AccessibilityScore%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted-sm"><span>0</span><span>50</span><span>100</span></div>
+                        <div class="mt-2">
+                            <span class="badge @Model.RatingBadgeClass" style="font-size:.9rem;padding:.4rem .9rem">@Model.RatingLabel</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>How this score is calculated:</strong> Each of the 8 accessibility features below contributes 12.5 points. This is a simple rule-based score — not an AI prediction.
+                </div>
+            </div>
+        </div>
+        <!-- Features Grid -->
+        <div class="card mb-4">
+            <div class="card-header">Accessibility Features</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    @foreach (var feature in new[] {
+                        ("Wheelchair Accessible", Model.WheelchairAccessible, "bi-wheelchair"),
+                        ("Ramps Available", Model.RampsAvailable, "bi-diagram-2"),
+                        ("Elevators Available", Model.ElevatorsAvailable, "bi-arrow-up-square"),
+                        ("Accessible Entrance", Model.AccessibleEntrance, "bi-door-open"),
+                        ("Accessible Parking", Model.AccessibleParking, "bi-p-square"),
+                        ("Tactile Paving", Model.TactilePaving, "bi-grid-3x3"),
+                        ("Audio Signals", Model.AudioSignals, "bi-volume-up"),
+                        ("Braille Signage", Model.BrailleSignage, "bi-braces")
+                    })
+                    {
+                        <div class="col-md-6 col-lg-3">
+                            <div class="p-3 rounded border text-center @(feature.Item2 ? "border-success bg-success bg-opacity-10" : "border-secondary bg-light")">
+                                <i class="bi @feature.Item3 fs-4 @(feature.Item2 ? "text-success" : "text-secondary")"></i>
+                                <div class="mt-1 small fw-bold">@feature.Item1</div>
+                                <div class="mt-1">
+                                    @if (feature.Item2) { <span class="badge badge-success"><i class="bi bi-check-lg me-1"></i>Yes</span> }
+                                    else { <span class="badge badge-secondary"><i class="bi bi-x me-1"></i>No</span> }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Model.Obstacles))
+        {
+            <div class="card mb-4">
+                <div class="card-header text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Identified Obstacles</div>
+                <div class="card-body">@Model.Obstacles</div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.AdditionalNotes))
+        {
+            <div class="card"><div class="card-header">Additional Notes</div><div class="card-body">@Model.AdditionalNotes</div></div>
+        }
+    </div>
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">Report Details</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Reporter</dt><dd class="col-sm-7">@Model.ReporterName</dd>
+                    <dt class="col-sm-5">Status</dt><dd class="col-sm-7"><span class="badge badge-secondary">@Model.Status</span></dd>
+                    <dt class="col-sm-5">Submitted</dt><dd class="col-sm-7">@Model.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</dd>
+                    <dt class="col-sm-5">Updated</dt><dd class="col-sm-7">@Model.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+        @if (Model.Location?.HasCoordinates == true)
+        {
+            <div class="card">
+                <div class="card-header"><i class="bi bi-pin-map me-2"></i>Location Map</div>
+                <div id="repMap" style="height:220px;border-radius:0 0 var(--radius) var(--radius)"></div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.Location?.HasCoordinates == true)
+{
+    @section HeadStyles { <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> }
+    @section Scripts {
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+        var map = L.map('repMap').setView([@Model.Location.Latitude, @Model.Location.Longitude], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
+        L.marker([@Model.Location.Latitude, @Model.Location.Longitude]).addTo(map).bindPopup('@Html.Raw((Model.Location.Name + " — " + Model.AccessibilityScore + "% accessible").Replace("'", "\\'"))').openPopup();
+        </script>
+    }
+}

@@ -1,0 +1,70 @@
+@model SmartLogisticsAccessibility.Web.Models.AccessibilityReport
+@{
+    var isEdit = Model.Id != 0;
+    ViewData["Title"] = isEdit ? "Edit Report" : "New Accessibility Report";
+}
+<div class="page-header">
+    <h1><i class="bi bi-clipboard2-check me-2 text-success"></i>@(isEdit ? "Edit Accessibility Report" : "New Accessibility Report")</h1>
+    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
+            <input type="hidden" asp-for="Id" />
+            @if (isEdit) { <input type="hidden" asp-for="CreatedAt" /> }
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label asp-for="LocationId" class="form-label">Location</label>
+                    <select asp-for="LocationId" asp-items="ViewBag.Locations" class="form-select"><option value="">Select location…</option></select>
+                    <span asp-validation-for="LocationId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6"><label asp-for="Title" class="form-label"></label><input asp-for="Title" class="form-control" /><span asp-validation-for="Title" class="text-danger small"></span></div>
+                <div class="col-md-6"><label asp-for="ReporterName" class="form-label"></label><input asp-for="ReporterName" class="form-control" /><span asp-validation-for="ReporterName" class="text-danger small"></span></div>
+                <div class="col-md-6">
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" asp-items="Html.GetEnumSelectList<SmartLogisticsAccessibility.Web.Models.ReportStatus>()" class="form-select"></select>
+                </div>
+            </div>
+
+            <h6 class="fw-bold mb-3"><i class="bi bi-universal-access me-2 text-success"></i>Accessibility Features
+                <span class="text-muted-sm fw-normal ms-2">— each checked feature adds 12.5 points to the score</span>
+            </h6>
+            <div class="row g-3 mb-4">
+                @foreach (var chk in new[] {
+                    (nameof(Model.WheelchairAccessible), "Wheelchair Accessible"),
+                    (nameof(Model.RampsAvailable), "Ramps Available"),
+                    (nameof(Model.ElevatorsAvailable), "Elevators Available"),
+                    (nameof(Model.AccessibleEntrance), "Accessible Entrance"),
+                    (nameof(Model.AccessibleParking), "Accessible Parking"),
+                    (nameof(Model.TactilePaving), "Tactile Paving"),
+                    (nameof(Model.AudioSignals), "Audio Signals"),
+                    (nameof(Model.BrailleSignage), "Braille Signage")
+                })
+                {
+                    <div class="col-md-6 col-lg-3">
+                        <div class="form-check form-switch p-3 border rounded">
+                            <input class="form-check-input" type="checkbox" role="switch"
+                                   name="@chk.Item1" id="@chk.Item1"
+                                   value="true"
+                                   @(Model.GetType().GetProperty(chk.Item1)?.GetValue(Model) is true ? "checked" : "") />
+                            <input type="hidden" name="@chk.Item1" value="false" />
+                            <label class="form-check-label" for="@chk.Item1">@chk.Item2</label>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6"><label asp-for="Obstacles" class="form-label"></label><textarea asp-for="Obstacles" class="form-control" rows="3" placeholder="Describe any obstacles or accessibility barriers…"></textarea></div>
+                <div class="col-md-6"><label asp-for="AdditionalNotes" class="form-label"></label><textarea asp-for="AdditionalNotes" class="form-control" rows="3" placeholder="Any other notes…"></textarea></div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>@(isEdit ? "Save Changes" : "Submit Report")</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }

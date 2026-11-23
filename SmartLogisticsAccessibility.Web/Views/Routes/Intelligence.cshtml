@@ -1,0 +1,153 @@
+@model IEnumerable<SmartLogisticsAccessibility.Web.Services.RouteRecommendation>
+@using SmartLogisticsAccessibility.Web.Models
+@{
+    ViewData["Title"] = "Route Intelligence";
+    int? originId = ViewBag.OriginId;
+    int? destinationId = ViewBag.DestinationId;
+    var priority = (ShipmentPriority)(ViewBag.Priority ?? ShipmentPriority.Normal);
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-signpost-split me-2 text-primary"></i>Route Intelligence</h1>
+        <div class="page-subtitle">Rule-based route scoring and recommendation engine</div>
+    </div>
+</div>
+
+<div class="alert alert-info mb-4">
+    <i class="bi bi-cpu me-2"></i>
+    <strong>How recommendations work:</strong>
+    Routes are scored on a 100-point weighted scale: <strong>Speed 40%</strong> + <strong>Cost 30%</strong> + <strong>Accessibility 20%</strong> + <strong>Priority Bonus 10%</strong>.
+    All distances and times are <em>estimates</em>. This is a transparent rule-based algorithm — not an AI prediction.
+</div>
+
+<!-- Query Form -->
+<div class="card mb-4">
+    <div class="card-header"><i class="bi bi-funnel me-2"></i>Find Route Options</div>
+    <div class="card-body">
+        <form method="get" asp-action="Intelligence" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Origin Location</label>
+                <select name="originId" class="form-select">
+                    <option value="">Select origin…</option>
+                    @foreach (SelectListItem item in (ViewBag.Locations as Microsoft.AspNetCore.Mvc.Rendering.SelectList ?? Enumerable.Empty<SelectListItem>()))
+                    {
+                        <option value="@item.Value" selected="@(item.Value == originId?.ToString())">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Destination Location</label>
+                <select name="destinationId" class="form-select">
+                    <option value="">Select destination…</option>
+                    @foreach (SelectListItem item in (ViewBag.Locations as Microsoft.AspNetCore.Mvc.Rendering.SelectList ?? Enumerable.Empty<SelectListItem>()))
+                    {
+                        <option value="@item.Value" selected="@(item.Value == destinationId?.ToString())">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Shipment Priority</label>
+                <select name="priority" class="form-select">
+                    @foreach (var p in Enum.GetValues<ShipmentPriority>())
+                    {
+                        <option value="@p" selected="@(priority == p)">@p</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>Analyse</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results -->
+@if (Model != null && Model.Any())
+{
+    <div class="mb-3 d-flex align-items-center gap-2">
+        <span class="fw-bold">@ViewBag.RouteCount route(s) found</span>
+        <span class="text-muted-sm">from <strong>@ViewBag.OriginName</strong> to <strong>@ViewBag.DestinationName</strong> · Priority: <span class="badge badge-primary">@priority</span></span>
+    </div>
+    <div class="row g-4">
+        @foreach (var rec in Model)
+        {
+            var r = rec.Route;
+            <div class="col-lg-6">
+                <div class="card @(rec.IsRecommended ? "border-primary" : "") h-100">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <span class="badge badge-secondary">Rank #@rec.Rank</span>
+                        <span class="fw-bold">@r.Name</span>
+                        @if (rec.IsRecommended) { <span class="recommended-tag ms-auto"><i class="bi bi-star-fill"></i> Recommended</span> }
+                    </div>
+                    <div class="card-body">
+                        <!-- Composite Score -->
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="text-center" style="min-width:70px">
+                                <div style="font-size:2rem;font-weight:800;color:@(rec.IsRecommended ? "#2563eb" : "#64748b")">@rec.Score</div>
+                                <div class="text-muted-sm">/ 100</div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="score-bar mb-1"><div class="score-bar-fill bg-primary" style="width:@rec.Score%"></div></div>
+                                <div class="text-muted-sm">Composite Score</div>
+                            </div>
+                        </div>
+
+                        <!-- Sub-scores -->
+                        <div class="row g-2 mb-3">
+                            @foreach (var sub in new[] {
+                                ("Speed", rec.SpeedScore, 40.0, "cyan"),
+                                ("Cost", rec.CostScore, 30.0, "success"),
+                                ("Accessibility", rec.AccessibilityScore, 20.0, "warning"),
+                                ("Priority Bonus", rec.PriorityBonus, 10.0, "purple")
+                            })
+                            {
+                                <div class="col-6">
+                                    <div class="text-muted-sm mb-1">@sub.Item1 (@sub.Item3 max)</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="score-bar flex-grow-1"><div class="score-bar-fill bg-@sub.Item4" style="width:@(sub.Item2 / sub.Item3 * 100)%"></div></div>
+                                        <span class="small fw-bold">@sub.Item2</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Route Details -->
+                        <div class="row g-2 text-muted-sm mb-3">
+                            <div class="col-6"><i class="bi bi-rulers me-1"></i>@r.EstimatedDistanceKm km <small>(est.)</small></div>
+                            <div class="col-6"><i class="bi bi-clock me-1"></i>@r.EstimatedTravelTimeHours hrs <small>(est.)</small></div>
+                            <div class="col-6"><i class="bi bi-currency-rupee me-1"></i>₹@(r.EstimatedCostINR?.ToString("N0") ?? "N/A") <small>(est.)</small></div>
+                            <div class="col-6"><span class="badge @r.AccessibilityLevelBadgeClass">@r.AccessibilityLevel Accessibility</span></div>
+                            <div class="col-6"><span class="badge badge-secondary">@r.Type</span></div>
+                        </div>
+
+                        <!-- Explanation -->
+                        <div class="p-2 bg-light rounded border small">
+                            <div class="fw-bold mb-1"><i class="bi bi-lightbulb me-1 text-warning"></i>Score Explanation</div>
+                            @rec.Explanation
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else if (originId.HasValue && destinationId.HasValue)
+{
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-signpost-split"></i>
+            <p class="mt-2 fw-bold">No routes found between these locations.</p>
+            <a asp-controller="Routes" asp-action="Create" class="btn btn-primary mt-2">Add a Route</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="empty-state">
+            <i class="bi bi-signpost-split"></i>
+            <p class="mt-2">Select an origin, destination and shipment priority above to get route recommendations.</p>
+        </div>
+    </div>
+}

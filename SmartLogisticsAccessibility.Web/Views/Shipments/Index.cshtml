@@ -1,0 +1,101 @@
+@model IEnumerable<SmartLogisticsAccessibility.Web.Models.Shipment>
+@{
+    ViewData["Title"] = "Shipments";
+}
+
+<div class="page-header">
+    <div>
+        <h1><i class="bi bi-box-seam me-2 text-primary"></i>Shipments</h1>
+        <div class="page-subtitle">Manage and track all shipments in the system</div>
+    </div>
+    <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>New Shipment</a>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label mb-1">Search</label>
+                <input type="text" name="search" value="@ViewBag.Search" class="form-control" placeholder="Tracking #, description, sender…" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label mb-1">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    @foreach (var s in Enum.GetValues<SmartLogisticsAccessibility.Web.Models.ShipmentStatus>())
+                    {
+                        <option value="@s" selected="@(ViewBag.Status == s.ToString())">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label mb-1">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="">All Priorities</option>
+                    @foreach (var p in Enum.GetValues<SmartLogisticsAccessibility.Web.Models.ShipmentPriority>())
+                    {
+                        <option value="@p" selected="@(ViewBag.Priority == p.ToString())">@p</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-search"></i></button>
+                <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x"></i></a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <table class="table table-hover mb-0">
+                <thead>
+                <tr>
+                    <th>Tracking #</th>
+                    <th>Description</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Est. Delivery</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td><a asp-action="Details" asp-route-id="@s.Id" class="fw-bold">@s.TrackingNumber</a>
+                            @if (s.IsSampleData) { <span class="badge badge-secondary ms-1">Demo</span> }
+                        </td>
+                        <td>@s.Description</td>
+                        <td class="text-muted-sm">@(s.OriginLocation?.City ?? "—")</td>
+                        <td class="text-muted-sm">@(s.DestinationLocation?.City ?? "—")</td>
+                        <td><span class="badge @s.StatusBadgeClass">@s.Status</span></td>
+                        <td><span class="badge @s.PriorityBadgeClass">@s.Priority</span></td>
+                        <td class="text-muted-sm">@(s.EstimatedDeliveryDate?.ToString("dd MMM yy") ?? "—")</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-sm btn-outline-secondary" title="Details"><i class="bi bi-eye"></i></a>
+                                <a asp-action="Edit" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary" title="Edit"><i class="bi bi-pencil"></i></a>
+                                <a asp-action="Delete" asp-route-id="@s.Id" class="btn btn-sm btn-outline-danger" title="Delete"><i class="bi bi-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-box-seam"></i>
+                <p class="mt-2 fw-bold">No shipments found.</p>
+                <a asp-action="Create" class="btn btn-primary mt-2"><i class="bi bi-plus-lg me-1"></i>Create First Shipment</a>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,22 @@
+@model SmartLogisticsAccessibility.Web.Models.Shipment
+@{
+    ViewData["Title"] = "Delete Shipment";
+}
+<div class="page-header">
+    <h1 class="text-danger"><i class="bi bi-trash me-2"></i>Delete Shipment</h1>
+</div>
+<div class="card" style="max-width:580px">
+    <div class="card-body">
+        <div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>This action <strong>cannot be undone</strong>. The following shipment will be permanently deleted.</div>
+        <dl class="row mb-3">
+            <dt class="col-sm-4">Tracking #</dt><dd class="col-sm-8 fw-bold">@Model.TrackingNumber</dd>
+            <dt class="col-sm-4">Description</dt><dd class="col-sm-8">@Model.Description</dd>
+            <dt class="col-sm-4">Status</dt><dd class="col-sm-8"><span class="badge @Model.StatusBadgeClass">@Model.Status</span></dd>
+        </dl>
+        <form asp-action="Delete" method="post" class="d-flex gap-2">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Confirm Delete</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
