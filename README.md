@@ -1,15 +1,5 @@
 # AI-Based Smart Logistics and Accessibility Intelligence Platform
 
-**Course:** CSE253 (.NET) — CA3 Allocated Project  
-**Project Code:** SIH26002  
-
-## 👥 Team Members
-- **Peta Venkata Ashok** — `RK3P25RAA28`
-- **Rehan Khan** — `RK3P25RAA29`
-- **Ishaan Sehdev** — `RK3P25RAA30`
-
----
-
 ## 🛠️ Technology Stack
 - **Framework:** ASP.NET Core MVC (.NET 10 / `net10.0`)
 - **ORM:** Entity Framework Core `10.0.15`
